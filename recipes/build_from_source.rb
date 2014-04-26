@@ -6,41 +6,25 @@
 #
 # All rights reserved - Do Not Redistribute
 #
+
 version = node[:mesos][:version]
 prefix = node[:mesos][:prefix]
-download_url = "https://github.com/apache/mesos/archive/#{version}.zip"
 installed = File.exist?(File.join(prefix, "sbin", "mesos-master"))
 
 if installed then
   Chef::Log.info("Mesos is already installed!! Instllation will be skipped.")
 end
 
+include_recipe "mesos::download_source"
 include_recipe "java"
 include_recipe "python"
 include_recipe "build-essential"
 
 # The list is necessary and sufficient?
-["unzip", "libtool", "libltdl-dev", "autoconf", "automake", "libcurl3", "libcurl3-gnutls", "libcurl4-openssl-dev", "python-dev", "libsasl2-dev"].each do |p|
+["libtool", "libltdl-dev", "autoconf", "automake", "libcurl3", "libcurl3-gnutls", "libcurl4-openssl-dev", "python-dev", "libsasl2-dev"].each do |p|
   package p do
     action :install
   end
-end
-
-
-remote_file "#{Chef::Config[:file_cache_path]}/mesos-#{version}.zip" do
-  source "#{download_url}"
-  mode   "0644"
-  not_if { installed==true }
-end
-
-bash "extracting mesos to #{node[:mesos][:home]}" do
-  cwd    "#{node[:mesos][:home]}"
-  code   <<-EOH
-    unzip -o #{Chef::Config[:file_cache_path]}/mesos-#{version}.zip -d ./
-    mv mesos-#{version} mesos
-  EOH
-  action :run
-  not_if { installed==true }
 end
 
 bash "building mesos from source" do
